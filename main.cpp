@@ -2,28 +2,14 @@
 #include <cmath>
 #include "portaudio.h"
 #include "src/AudioNode.h"
+#include "src/OscillatorNode.h"
+#include "src/OutputNode.h"
 
 struct AudioData {
-    float phase;
-    float frequency;
-    float sampleRate;
+    OscillatorNode* oscillator;
+    OutputNode* output;
     int bufferSize;
     int numChannels;
-};
-
-class TestNode : public AudioNode {
-    public:
-    void prepare(double sampleRate, int bufferSize) override {
-        std::cout << "TestNode::prepare" << std::endl;
-    };
-
-    void process(float** inputs, float** outputs, int numSamples) override {
-        std::cout << "TestNode::process" << std::endl;
-    };
-
-    void reset() override {
-        std::cout << "TestNode::reset" << std::endl;
-    };
 };
 
 int audioCallback(
@@ -42,37 +28,36 @@ int audioCallback(
     auto* out = static_cast<float*>(outputBuffer);
     auto data = static_cast<AudioData*>(userData);
 
-    const float phaseIncrement = (2.0f * static_cast<float>(M_PI) * data->frequency) / data->sampleRate;
+    float leftBuffer[512];
+    float rightBuffer[512];
+    float* buffers[2] = {leftBuffer, rightBuffer};
 
-    for (unsigned long i = 0; i < framesPerBuffer; i++) {
-        for (int j = 0; j < data->numChannels; j++) {
-            out[i * data->numChannels + j] = std::sin(data->phase);
-        }
-        data->phase += phaseIncrement;
-        if (data->phase >= 2.0f * static_cast<float>(M_PI)) { data->phase -= 2.0f * static_cast<float>(M_PI); }
-    }
+    data->oscillator->process(nullptr, buffers, static_cast<int>(framesPerBuffer));
+    data->output->setBuffer(out, static_cast<int>(framesPerBuffer));
+    data->output->process(buffers, nullptr, static_cast<int>(framesPerBuffer));
 
     return paContinue;
 }
 
 int main() {
 
-    AudioData data{0.0f, 440.0f, 44100.0f, 512, 2};
+    auto* oscillator = new OscillatorNode(440.0f, 44100.0f);
+    auto* output = new OutputNode(nullptr, 0);
 
-    AudioNode* node = new TestNode();
-    node->prepare(data.sampleRate, data.bufferSize);
-    node->process(nullptr, nullptr, 512);
-    node->reset();
-    delete node;
+    oscillator->prepare(44100.0, 512, 2);
+    output->prepare(44100.0, 512, 2);
+
+
+    AudioData data{oscillator, output, 512, 2};
 
     Pa_Initialize();
+
+    PaStream* stream;
 
     if (Pa_GetDefaultOutputDevice() == paNoDevice) {
         std::cerr << "No output device found" << std::endl;
         return 1;
     }
-
-    PaStream* stream;
 
     PaStreamParameters outputParams{
         Pa_GetDefaultOutputDevice(),
@@ -82,7 +67,7 @@ int main() {
     nullptr};
 
     PaError err = Pa_OpenStream(&stream, nullptr, &outputParams,
-        data.sampleRate, data.bufferSize, paClipOff, audioCallback, &data);
+        44100.0, 512, paClipOff, audioCallback, &data);
     if (err != paNoError) {
         std::cerr << "Pa_OpenStream failed: " << Pa_GetErrorText(err) << std::endl;
         return 1;
@@ -98,6 +83,9 @@ int main() {
     Pa_StopStream(stream);
     Pa_CloseStream(stream);
     Pa_Terminate();
+
+    delete oscillator;
+    delete output;
 
     return 0;
 }
