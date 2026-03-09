@@ -15,3 +15,9 @@ FetchContent_MakeAvailable(portaudio)
 
 add_executable(Amphion main.cpp)
 target_link_libraries(Amphion PRIVATE portaudio)
+
+add_custom_command(TARGET Amphion POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:portaudio>
+        $<TARGET_FILE_DIR:Amphion>
+)
