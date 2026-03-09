@@ -13,7 +13,8 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(portaudio)
 
-add_executable(Amphion main.cpp)
+add_executable(Amphion main.cpp
+        src/AudioNode.h)
 target_link_libraries(Amphion PRIVATE portaudio)
 
 add_custom_command(TARGET Amphion POST_BUILD

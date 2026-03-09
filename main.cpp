@@ -1,12 +1,29 @@
 #include <iostream>
 #include <cmath>
 #include "portaudio.h"
+#include "src/AudioNode.h"
 
 struct AudioData {
     float phase;
     float frequency;
     float sampleRate;
+    int bufferSize;
     int numChannels;
+};
+
+class TestNode : public AudioNode {
+    public:
+    void prepare(double sampleRate, int bufferSize) override {
+        std::cout << "TestNode::prepare" << std::endl;
+    };
+
+    void process(float** inputs, float** outputs, int numSamples) override {
+        std::cout << "TestNode::process" << std::endl;
+    };
+
+    void reset() override {
+        std::cout << "TestNode::reset" << std::endl;
+    };
 };
 
 int audioCallback(
@@ -39,6 +56,15 @@ int audioCallback(
 }
 
 int main() {
+
+    AudioData data{0.0f, 440.0f, 44100.0f, 512, 2};
+
+    AudioNode* node = new TestNode();
+    node->prepare(data.sampleRate, data.bufferSize);
+    node->process(nullptr, nullptr, 512);
+    node->reset();
+    delete node;
+
     Pa_Initialize();
 
     if (Pa_GetDefaultOutputDevice() == paNoDevice) {
@@ -47,17 +73,16 @@ int main() {
     }
 
     PaStream* stream;
-    AudioData data{0.0f, 440.0f, 44100.0f, 2};
 
-    PaStreamParameters outputParams;
-    outputParams.device = Pa_GetDefaultOutputDevice();
-    outputParams.channelCount = data.numChannels;
-    outputParams.sampleFormat = paFloat32;
-    outputParams.suggestedLatency = Pa_GetDeviceInfo(outputParams.device)->defaultLowOutputLatency;
-    outputParams.hostApiSpecificStreamInfo = nullptr;
+    PaStreamParameters outputParams{
+        Pa_GetDefaultOutputDevice(),
+    data.numChannels,
+    paFloat32,
+    Pa_GetDeviceInfo(Pa_GetDefaultOutputDevice())->defaultLowOutputLatency,
+    nullptr};
 
     PaError err = Pa_OpenStream(&stream, nullptr, &outputParams,
-        data.sampleRate, 512, paClipOff, audioCallback, &data);
+        data.sampleRate, data.bufferSize, paClipOff, audioCallback, &data);
     if (err != paNoError) {
         std::cerr << "Pa_OpenStream failed: " << Pa_GetErrorText(err) << std::endl;
         return 1;
