@@ -1,6 +1,10 @@
 #pragma once
 #include "AudioNode.h"
 
+/**
+ * OscillatorNode -- Generates a continuous sine wave at a given frequency.
+ * Writes identical samples to all output channels.
+ */
 class OscillatorNode : public AudioNode {
 public:
     OscillatorNode(float frequency, float sampleRate);
@@ -10,8 +14,8 @@ public:
     void reset() override;
 
 private:
-    float phase;
-    float frequency;
-    float sampleRate;
-    int numChannels;
+    float phase;        // current position in the sine cycle (0-2π)
+    float frequency;    // pitch (Hz)
+    float sampleRate;   // samples per second
+    int numChannels;    // number of output channels
 };

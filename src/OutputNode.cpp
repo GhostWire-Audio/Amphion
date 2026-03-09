@@ -1,7 +1,3 @@
-//
-// Created by Jesse on 3/9/2026.
-//
-
 #include "OutputNode.h"
 
 OutputNode::OutputNode(float* outputBuffer, int numFrames)
@@ -15,6 +11,7 @@ void OutputNode::prepare(double newSampleRate, int bufferSize, int newNumChannel
 
 void OutputNode::process(float** inputs, float** outputs, int numSamples) {
     (void)outputs;
+    // convert non-interleaved inputs[channel][sample] to interleaved PortAudio buffer
     for (int i = 0; i < numSamples; i++) {
         for (int j = 0; j < numChannels; j++) {
             outputBuffer[i * numChannels + j] = inputs[j][i];

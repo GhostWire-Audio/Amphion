@@ -1,10 +1,16 @@
 #include <iostream>
 #include <cmath>
 #include "portaudio.h"
-#include "src/AudioNode.h"
 #include "src/OscillatorNode.h"
 #include "src/OutputNode.h"
 
+/**
+ * main.cpp -- Entry point for Amphion.
+ * Sets up the node graph, initializes PortAudio, and runs the audio stream.
+ * Currently runs a single OscillatorNode connected to an OutputNode.
+ */
+
+// Passed to the audio callback via PortAudio's userData
 struct AudioData {
     OscillatorNode* oscillator;
     OutputNode* output;
@@ -12,6 +18,7 @@ struct AudioData {
     int numChannels;
 };
 
+// Called by PortAudio every time it needs a new buffer of audio
 int audioCallback(
     const void* inputBuffer,
     void* outputBuffer,
@@ -28,6 +35,7 @@ int audioCallback(
     auto* out = static_cast<float*>(outputBuffer);
     auto data = static_cast<AudioData*>(userData);
 
+    // intermediate non-interleaved buffers between nodes
     float leftBuffer[512];
     float rightBuffer[512];
     float* buffers[2] = {leftBuffer, rightBuffer};
@@ -50,6 +58,8 @@ int main() {
 
     AudioData data{oscillator, output, 512, 2};
 
+    // Don't ask me how a lot of this shit works, it just does.
+    // (if any of you know please message me)
     Pa_Initialize();
 
     PaStream* stream;
