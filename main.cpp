@@ -12,10 +12,10 @@
 
 // Passed to the audio callback via PortAudio's userData
 struct AudioData {
-    OscillatorNode* oscillator;
-    OutputNode* output;
     int bufferSize;
     int numChannels;
+    OscillatorNode* oscillator;
+    OutputNode* output;
 };
 
 // Called by PortAudio every time it needs a new buffer of audio
@@ -56,7 +56,7 @@ int main() {
     output->prepare(44100.0, 512, 2);
 
 
-    AudioData data{oscillator, output, 512, 2};
+    AudioData data{512, 2, oscillator, output};
 
     // Don't ask me how a lot of this shit works, it just does.
     // (if any of you know please message me)
