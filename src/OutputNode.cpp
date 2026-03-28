@@ -1,12 +1,13 @@
 #include "OutputNode.h"
 
 OutputNode::OutputNode(float* outputBuffer, int numFrames)
-: outputBuffer(outputBuffer), numFrames(numFrames), numChannels(0) {}
+: outputBuffer(outputBuffer), numFrames(numFrames) {}
 
-void OutputNode::prepare(double newSampleRate, int bufferSize, int newNumChannels) {
-    (void)newSampleRate;
+void OutputNode::prepare(double sr, int buf, int ch) {
+    AudioNode::prepare(sr, buf, ch);
+    (void)sampleRate;
     (void)bufferSize;
-    this->numChannels = newNumChannels;
+    this->numChannels = ch;
 }
 
 void OutputNode::process(float** inputs, float** outputs, int numSamples) {

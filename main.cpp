@@ -1,77 +1,70 @@
 #include <iostream>
-#include <cmath>
 #include "portaudio.h"
 #include "src/OscillatorNode.h"
 #include "src/OutputNode.h"
+#include "src/GainNode.h"
+#include "src/AudioGraph.h"
 
 /**
- * main.cpp -- Entry point for Amphion.
- * Sets up the node graph, initializes PortAudio, and runs the audio stream.
- * Currently runs a single OscillatorNode connected to an OutputNode.
+ *  main.cpp is, as typical, the "entry point" for Amphion.
+ *  It sets up the node graph, initializes PortAudio, and runs the audio stream.
+ *  Graph traversal and buffer routing are handled automatically by AudioGraph.
  */
 
-// Passed to the audio callback via PortAudio's userData
 struct AudioData {
-    int bufferSize;
-    int numChannels;
-    OscillatorNode* oscillator;
+    AudioGraph* graph;
     OutputNode* output;
 };
 
-// Called by PortAudio every time it needs a new buffer of audio
 int audioCallback(
     const void* inputBuffer,
     void* outputBuffer,
     const unsigned long framesPerBuffer,
     const PaStreamCallbackTimeInfo* timeInfo,
     PaStreamCallbackFlags statusFlags,
-    void* userData)
-{
-
+    void* userData) {
     (void)inputBuffer;
     (void)timeInfo;
     (void)statusFlags;
 
     auto* out = static_cast<float*>(outputBuffer);
-    auto data = static_cast<AudioData*>(userData);
+    auto* data = static_cast<AudioData*>(userData);
 
-    // intermediate non-interleaved buffers between nodes
-    float leftBuffer[512];
-    float rightBuffer[512];
-    float* buffers[2] = {leftBuffer, rightBuffer};
-
-    data->oscillator->process(nullptr, buffers, static_cast<int>(framesPerBuffer));
     data->output->setBuffer(out, static_cast<int>(framesPerBuffer));
-    data->output->process(buffers, nullptr, static_cast<int>(framesPerBuffer));
+    data->graph->process(static_cast<int>(framesPerBuffer));
 
     return paContinue;
 }
 
 int main() {
-
     auto* oscillator = new OscillatorNode(440.0f, 44100.0f);
+    auto* gain = new GainNode(1.0f);
     auto* output = new OutputNode(nullptr, 0);
 
-    oscillator->prepare(44100.0, 512, 2);
-    output->prepare(44100.0, 512, 2);
+    auto* graph = new AudioGraph();
+    graph->addNode(oscillator);
+    graph->addNode(gain);
+    graph->addNode(output);
 
+    graph->connect(oscillator, gain);
+    graph->connect(gain, output);
 
-    AudioData data{512, 2, oscillator, output};
+    graph->prepare(44100.0, 512, 2);
 
-    // Don't ask me how a lot of this shit works, it just does.
-    // (if any of you know please message me)
+    AudioData data{graph, output};
+
     Pa_Initialize();
 
     PaStream* stream;
 
     if (Pa_GetDefaultOutputDevice() == paNoDevice) {
-        std::cerr << "No output device found" << std::endl;
+        std::cerr << "No output devices found" << std::endl;
         return 1;
     }
 
     PaStreamParameters outputParams{
-        Pa_GetDefaultOutputDevice(),
-    data.numChannels,
+    Pa_GetDefaultOutputDevice(),
+    2,
     paFloat32,
     Pa_GetDeviceInfo(Pa_GetDefaultOutputDevice())->defaultLowOutputLatency,
     nullptr};
@@ -96,6 +89,6 @@ int main() {
 
     delete oscillator;
     delete output;
-
-    return 0;
+    delete gain;
+    delete graph;
 }

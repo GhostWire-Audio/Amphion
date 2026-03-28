@@ -11,7 +11,7 @@ class OutputNode : public AudioNode {
 public:
     OutputNode(float* outputBuffer, int numFrames);
 
-    void prepare(double newSampleRate, int bufferSize, int newNumChannels) override;
+    void prepare(double sr, int buf, int ch) override;
     void process(float** inputs, float** outputs, int numSamples) override;
     void reset() override;
 
@@ -21,5 +21,4 @@ public:
 private:
     float* outputBuffer;    // PortAudio's interleaved output buffer
     int numFrames;
-    int numChannels;
 };

@@ -19,6 +19,10 @@ add_executable(Amphion
         src/OutputNode.cpp
         src/OutputNode.h
         src/OscillatorNode.h
+        src/GainNode.cpp
+        src/GainNode.h
+        src/AudioGraph.cpp
+        src/AudioGraph.h
 )
 target_link_libraries(Amphion PRIVATE portaudio)
 
