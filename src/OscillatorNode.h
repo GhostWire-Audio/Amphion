@@ -1,5 +1,6 @@
 #pragma once
 #include "AudioNode.h"
+#include <atomic>
 
 /**
  * OscillatorNode -- Generates a continuous sine wave at a given frequency.
@@ -13,7 +14,9 @@ public:
     void process(float** inputs, float** outputs, int numSamples) override;
     void reset() override;
 
+    void setFrequency(float frequency);
+
 private:
-    float phase;        // current position in the sine cycle (0-2π)
-    float frequency;    // pitch (Hz)
+    float phase; // Current position in the sine cycle
+    std::atomic<float> frequency;
 };

@@ -1,5 +1,6 @@
 #pragma once
 #include "AudioNode.h"
+#include <atomic>
 
 class GainNode : public AudioNode {
 public:
@@ -9,6 +10,8 @@ public:
     void process(float** inputs, float** outputs, int numSamples) override;
     void reset() override;
 
+    void setGain(float gain);
+
 private:
-    float gain;
+    std::atomic<float> gain;
 };

@@ -57,32 +57,36 @@ int main() {
 
     PaStream* stream;
 
+    // PortAudio error handling
     if (Pa_GetDefaultOutputDevice() == paNoDevice) {
         std::cerr << "No output devices found" << std::endl;
         return 1;
     }
-
     PaStreamParameters outputParams{
     Pa_GetDefaultOutputDevice(),
     2,
     paFloat32,
     Pa_GetDeviceInfo(Pa_GetDefaultOutputDevice())->defaultLowOutputLatency,
     nullptr};
-
     PaError err = Pa_OpenStream(&stream, nullptr, &outputParams,
         44100.0, 512, paClipOff, audioCallback, &data);
     if (err != paNoError) {
         std::cerr << "Pa_OpenStream failed: " << Pa_GetErrorText(err) << std::endl;
         return 1;
     }
-
     err = Pa_StartStream(stream);
     if (err != paNoError) {
         std::cerr << "Pa_StartStream failed: " << Pa_GetErrorText(err) << std::endl;
         return 1;
     }
 
-    Pa_Sleep(3000);
+    Pa_Sleep(1500);
+
+    gain->setGain(1.5f);
+    oscillator->setFrequency(880.0f);
+
+    Pa_Sleep(1500);
+
     Pa_StopStream(stream);
     Pa_CloseStream(stream);
     Pa_Terminate();
@@ -91,4 +95,6 @@ int main() {
     delete output;
     delete gain;
     delete graph;
+
+    return 0;
 }

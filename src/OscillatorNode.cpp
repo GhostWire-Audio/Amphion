@@ -8,16 +8,16 @@ OscillatorNode::OscillatorNode(float frequency, float sampleRate)
 
 void OscillatorNode::prepare(double sr, int buf, int ch) {
     AudioNode::prepare(sr, buf, ch);
-    sampleRate = sr;
-    numChannels = ch;
 }
 
 void OscillatorNode::process(float** inputs, float** outputs, int numSamples) {
     (void) inputs;
 
-    const double pi = std::numbers::pi;
+    float freq = frequency.load(std::memory_order_relaxed);
 
-    const float phaseIncrement = (2.0f * static_cast<float>(pi) * frequency) / static_cast<float>(sampleRate);
+    const double PI = std::numbers::pi;
+
+    const float phaseIncrement = (2.0f * static_cast<float>(PI) * freq) / static_cast<float>(sampleRate);
     for (int i = 0; i < numSamples; i++) {
         // write the same sample to all channels
         for (int j = 0; j < numChannels; j++) {
@@ -25,12 +25,16 @@ void OscillatorNode::process(float** inputs, float** outputs, int numSamples) {
         }
         phase += phaseIncrement;
         // wrap phase to keep it between 0 and 2π
-        if (phase > 2.0f * static_cast<float>(pi)) {
-            phase -= 2.0f * static_cast<float>(pi);
+        if (phase > 2.0f * static_cast<float>(PI)) {
+            phase -= 2.0f * static_cast<float>(PI);
         }
     }
 }
 
 void OscillatorNode::reset() {
     this->phase = 0.0f;
+}
+
+void OscillatorNode::setFrequency(float frequency) {
+    this->frequency.store(frequency, std::memory_order_relaxed);
 }
